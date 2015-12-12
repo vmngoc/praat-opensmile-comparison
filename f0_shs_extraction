@@ -1,0 +1,64 @@
+dirs = Create Strings as directory list: "dirs", "../sounds/"
+num_dirs = Get number of strings
+# iterate to all subdirectories
+for j to num_dirs
+	selectObject: dirs
+	dirName$ = Get string... j
+	path$ = "../sounds/" + dirName$ + "/"
+	saved_path$ = "../f0_data/Praat/shs/" + dirName$ + "/"
+	
+	printline 'dirName$'
+	
+	files = Create Strings as file list: "files", path$ + "*wav"
+	num_files = Get number of strings
+	for i to num_files
+		selectObject: files
+		filename$ = Get string: i
+		sound = Read from file: path$ + filename$
+
+		# Run analysis for each Sound here
+		startTime = Get start time
+		endTime = Get end time
+		timeStep = 0.01 
+		numberOfTimeSteps = (endTime - startTime) / timeStep
+
+		# create Pitch object using the SHS method
+		pitch =  To Pitch (shs)... 0.01 75 15 1250 15 0.84 600 48 
+		pitch = selected ("Pitch")
+		output_table = Create Table with column names: "output", 0,
+		... "tmin tmax f0mean f0minimum f0maximum f0stdev"
+	  
+		# analysis of f0 over time
+		for step to numberOfTimeSteps
+			selectObject:pitch
+			tmin = startTime + (step - 1) * timeStep
+			tmax = tmin + timeStep
+			f0mean = Get mean: tmin, tmax, "Hertz"
+			f0minimum = Get minimum: tmin, tmax, "Hertz", "Parabolic"
+			f0maximum = Get maximum: tmin, tmax, "Hertz", "Parabolic"
+			f0stdev = Get standard deviation: tmin, tmax, "Hertz"
+
+			# write results to table
+			selectObject: output_table
+			Append row
+			row = Get number of rows
+			Set numeric value: row, "tmin", tmin
+			Set numeric value: row, "tmax", tmax
+			Set numeric value: row, "f0mean", f0mean
+			Set numeric value: row, "f0minimum", f0minimum
+			Set numeric value: row, "f0maximum", f0maximum
+			Set numeric value: row, "f0stdev", f0stdev
+		endfor
+
+		selectObject: output_table
+
+		# get rid of the .wav at the end of file name
+		length = length (filename$)
+		output_name$ = left$(filename$, length - 4) 
+		Save as comma-separated file: saved_path$ + output_name$ + "_f0_praat.csv"
+		removeObject: output_table
+		removeObject: sound, pitch
+	endfor
+	removeObject: files
+endfor
+removeObject: dirs

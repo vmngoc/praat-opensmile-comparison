@@ -1,0 +1,58 @@
+form Process files...
+  sentence Path ../sounds/
+
+endform
+
+# Optional: make sure the path has a trailing slash
+path$ = if right$(path$) = "/" then path$ else path$ + "/" fi
+saved_path$ = "../shimmer_data/Praat/"
+
+files = Create Strings as file list: "files", path$ + "*wav"
+num_files = Get number of strings
+
+for i to num_files
+  selectObject: files
+  filename$ = Get string: i
+  sound = Read from file: path$ + filename$
+  pitch = To Pitch: 0.01, 75, 600
+  selectObject: sound
+  plusObject: pitch
+  pointProcess = To PointProcess (cc)
+
+  # Run analysis for each Sound here
+  startTime = Get start time
+  endTime = Get end time
+  timeStep = 0.01 
+  numberOfTimeSteps = (endTime - startTime) / timeStep
+
+  output_table = Create Table with column names: "output", 0,
+  ... "tmin tmax shimmer"
+  
+  # analysis of shimmer over time
+  for step to numberOfTimeSteps
+      selectObject: sound
+      plusObject: pointProcess
+      tmin = startTime + (step - 1) * timeStep
+      tmax = tmin + timeStep
+      shimmer = Get shimmer (local): tmin, tmax, 0.0001, 0.02, 1.3, 1.6
+
+      # write results to table
+      selectObject: output_table
+      Append row
+      row = Get number of rows
+      Set numeric value: row, "tmin", tmin
+      Set numeric value: row, "tmax", tmax
+      Set numeric value: row, "shimmer", shimmer
+  endfor
+
+  selectObject: output_table
+
+  # get rid of the .wav at the end of file name
+  length = length (filename$)
+  output_name$ = left$(filename$, length - 4) 
+  Save as comma-separated file: saved_path$ + output_name$ + "_shimmer_praat.csv"
+  removeObject: output_table
+  removeObject: sound, pitch, pointProcess
+endfor
+
+removeObject: files
