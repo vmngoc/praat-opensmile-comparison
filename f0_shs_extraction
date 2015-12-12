@@ -1,3 +1,5 @@
+# Praat script for extracting F0 feature using the SHS method for all sounds in a directory and output the results into .csv files
+
 dirs = Create Strings as directory list: "dirs", "../sounds/"
 num_dirs = Get number of strings
 # iterate to all subdirectories
