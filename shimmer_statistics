@@ -1,3 +1,5 @@
+# Praat script for extracting shimmer feature ufor all sounds in a directory and output the results into .csv files
+
 form Process files...
   sentence Path ../sounds/
 
